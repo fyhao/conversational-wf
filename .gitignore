@@ -1,0 +1,10 @@
+*/bin
+*/obj
+*.user-settings.xml
+
+
+*/node_modules/
+
+*/.nyc_output/
+
+*/coverage/
