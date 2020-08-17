@@ -33,6 +33,5 @@
     "really-need": "^1.9.2",
     "should": ">= 0.0.1",
     "supertest": "^3.0.0"
-  },
-  "snyk": true
+  }
 }
