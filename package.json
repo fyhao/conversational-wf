@@ -8,8 +8,6 @@
     "coverage": "nyc report --reporter=text-lcov | coveralls",
     "performance": "node --allow-natives-syntax ./node_modules/mocha/bin/_mocha --reporter mocha-performance ./test/alltests.js",
     "start": "node app.js",
-    "snyk-protect": "snyk protect",
-    "prepublish": "npm run snyk-protect"
   },
   "author": "",
   "license": "ISC",
