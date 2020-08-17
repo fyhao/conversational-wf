@@ -1,1 +1,1 @@
-web: node wf-converse/app.js
+web: node app.js
