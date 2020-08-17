@@ -3,4 +3,4 @@ const optionDefinitions = [
 ]
 const commandLineArgs = require('command-line-args')
 const options = commandLineArgs(optionDefinitions)
-var server = require('./server.js')({port:options.port});
+var server = require('./server.js')({port:process.env.PORT || options.port});
