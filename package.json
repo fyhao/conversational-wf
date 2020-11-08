@@ -19,7 +19,6 @@
     "mysql": "^2.16.0",
     "snyk": "^1.189.0",
     "unirest": "^0.5.1",
-    "websocket": "^1.0.32",
     "xml2js": "^0.4.23"
   },
   "devDependencies": {
