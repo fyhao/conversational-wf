@@ -1,8 +1,10 @@
 var DataStore = ProjRequire('./lib/data-store.js');
 var modServlet = ProjRequire('./lib/module/engine/modServlet');
+var runtime = ProjRequire('./lib/module/engine/runtime');
 var dataStore = new DataStore();
 var mod = {
 	deploy : function(req, res) {
+		var conf;
 		if(typeof req.body.conf == 'string') {
 			conf = JSON.parse(req.body.conf);
 		}
@@ -186,58 +188,14 @@ var mod = {
 var createHandler = function(eventMgr, appItem, appLi) {
 	return modServlet.createHandler(eventMgr, appItem, appLi);
 }
-var modFlow = ProjRequire('./lib/module/engine/modFlow');
 var triggerFlow = function(flows, flow) {
-	var ctx = {}; // context object
-	ctx.vars = {};
-	ctx.flows = flows;
-	ctx._logs = [];
-	ctx.props = {};
-	ctx.FLOW_ENGINE_CANCELED_notification_queues = [];
-	
-	ctx.enable_FLOW_ENGINE_CANCELLED = function() {
-		var queues = ctx.FLOW_ENGINE_CANCELED_notification_queues;
-		if(queues && queues.length) {
-			for(var i = 0; i < queues.length; i++) {
-				queues[i]();
-			}
-		}
-	}
-	ctx.createFlowEngine = function(flow) {
-		if(typeof flow != 'undefined') {
-			if(typeof flow == 'object') {
-				// flow object
-				return new modFlow.FlowEngine(flow).setContext(ctx);
-			}
-			else if(typeof flow == 'string') {
-				// flow name
-				if(typeof ctx.flows[flow] != 'undefined') {
-					return new modFlow.FlowEngine(ctx.flows[flow]).setContext(ctx);
-				}
-			}
-		}
-		// return dummy function for silent execution
-		return {
-			execute : function(next) {
-				if(next.length == 1) {
-					setTimeout(function() {
-						next({});
-					}, 1);
-				}
-				else {
-					setTimeout(next, 1);
-				}
-			}
-			,
-			setInputVars : function(_vars){
-				return this;
-			}
-		};
-	}
+	var ctx = runtime.createContext({
+		flows : flows
+	});
 	ctx.createFlowEngine(flow).execute(function() {});
 }
 var registeredEndpoints = [];
-var registerApps = null;
+var registeredApps = [];
 var EventManager = function() {
 	var listeners = [];
 	this.init = function() {

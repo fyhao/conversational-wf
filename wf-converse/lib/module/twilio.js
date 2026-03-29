@@ -1,4 +1,5 @@
-var fs = require('fs');
+var runtime = ProjRequire('./lib/module/engine/runtime');
+var twilioChannel = ProjRequire('./lib/module/engine/twilioChannel');
 
 var sessions = {};
 var mod = {
@@ -36,7 +37,6 @@ var mod = {
 			if(typeof req.query.sessionid == 'undefined') {
 				return res.status(404).send('sessionid not found');
 			}
-			var data = sessions[req.query.sessionid].response;
 			var ctx = sessions[req.query.sessionid].ctx;
 			console.log('Received twilio callback before ctx.sendResponse');
 			ctx.sendResponse = function(data) {
@@ -71,7 +71,6 @@ var mod = {
 				return res.status(404).send('sessionid not found');
 			}
 			sessions[req.query.sessionid].ctx.gatheredDigits = req.body.Digits;
-			var data = sessions[req.query.sessionid].response;
 			var ctx = sessions[req.query.sessionid].ctx;
 			console.log('Received twilio gather before ctx.sendResponse');
 			ctx.sendResponse = function(data) {
@@ -96,62 +95,11 @@ var mod = {
 	}
 }
 
-var loadTemplateIntoSession = function(sessionid, template, done) {
-	fs.readFile('lib/module/twiliotemplate/' + template + '.xml', 'utf8', function(err, data) {
-		sessions[sessionid].response = data;
-		sessions[sessionid].ctx.state = template;
-		done();
-	});
-}
-
-var modFlow = ProjRequire('./lib/module/engine/modFlow');
 var triggerFlow = function(flows, flow, fn) {
-	var ctx = {}; // context object
-	ctx.vars = {};
-	ctx.flows = flows;
-	ctx._logs = [];
-	ctx.props = {};
-	ctx.FLOW_ENGINE_CANCELED_notification_queues = [];
-	
-	ctx.enable_FLOW_ENGINE_CANCELLED = function() {
-		var queues = ctx.FLOW_ENGINE_CANCELED_notification_queues;
-		if(queues && queues.length) {
-			for(var i = 0; i < queues.length; i++) {
-				queues[i]();
-			}
-		}
-	}
-	ctx.createFlowEngine = function(flow) {
-		if(typeof flow != 'undefined') {
-			if(typeof flow == 'object') {
-				// flow object
-				return new modFlow.FlowEngine(flow).setContext(ctx);
-			}
-			else if(typeof flow == 'string') {
-				// flow name
-				if(typeof ctx.flows[flow] != 'undefined') {
-					return new modFlow.FlowEngine(ctx.flows[flow]).setContext(ctx);
-				}
-			}
-		}
-		// return dummy function for silent execution
-		return {
-			execute : function(next) {
-				if(next.length == 1) {
-					setTimeout(function() {
-						next({});
-					}, 1);
-				}
-				else {
-					setTimeout(next, 1);
-				}
-			}
-			,
-			setInputVars : function(_vars){
-				return this;
-			}
-		};
-	}
+	var ctx = runtime.createContext({
+		flows : flows
+	});
+	ctx.channel = twilioChannel.create(ctx);
 	fn(ctx);
 	console.log('Flow execution started');
 	ctx.createFlowEngine(flow).execute(function() {

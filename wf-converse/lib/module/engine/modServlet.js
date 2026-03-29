@@ -1,6 +1,6 @@
 var DataStore = ProjRequire('./lib/data-store.js');
 var dataStore = new DataStore();
-var modFlow = require('./modFlow');
+var runtime = require('./runtime');
 
 var createHandler = function(eventMgr, appItem, appLi) {
 	
@@ -23,60 +23,14 @@ var createHandler = function(eventMgr, appItem, appLi) {
 var dataStore_getApps = dataStore.getApps;
 var createContext = function(app, req, res) {
 	return new Promise(function(resolve,reject) {
-		var flows = null;
 		dataStore_getApps().then(function(apps) {
 			apps.forEach(function(appItem) {
 				if(appItem.app == app) {
-					flows = appItem.flows;
-					var ctx = {}; // context object
-					ctx.req = req;
-					ctx.res = res;
-					ctx.flows = flows;
-					ctx.vars = {};
-					ctx._logs = [];
-					ctx.props = {};
-					ctx.FLOW_ENGINE_CANCELED_notification_queues = [];
-					
-					ctx.enable_FLOW_ENGINE_CANCELLED = function() {
-						var queues = ctx.FLOW_ENGINE_CANCELED_notification_queues;
-						if(queues && queues.length) {
-							for(var i = 0; i < queues.length; i++) {
-								queues[i]();
-							}
-						}
-					}
-					ctx.createFlowEngine = function(flow) {
-						if(typeof flow != 'undefined') {
-							if(typeof flow == 'object') {
-								// flow object
-								return new modFlow.FlowEngine(flow).setContext(ctx);
-							}
-							else if(typeof flow == 'string') {
-								// flow name
-								if(typeof ctx.flows[flow] != 'undefined') {
-									return new modFlow.FlowEngine(ctx.flows[flow]).setContext(ctx);
-								}
-							}
-						}
-						// return dummy function for silent execution
-						return {
-							execute : function(next) {
-								if(next.length == 1) {
-									setTimeout(function() {
-										next({});
-									}, 1);
-								}
-								else {
-									setTimeout(next, 1);
-								}
-							}
-							,
-							setInputVars : function(_vars){
-								return this;
-							}
-						};
-					}
-					resolve(ctx);
+					resolve(runtime.createContext({
+						req : req,
+						res : res,
+						flows : appItem.flows
+					}));
 				}
 			});
 		});

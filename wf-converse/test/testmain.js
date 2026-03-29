@@ -2,6 +2,7 @@ var assert = require('assert');
 var request = require('supertest');
 
 var parseString = require('xml2js').parseString;
+var runtime = ProjRequire('./lib/module/engine/runtime');
 
 describe('loading express', function () {
   var server;
@@ -24,6 +25,89 @@ describe('loading express', function () {
   });
   
 });
+
+describe('engine runtime helpers', function () {
+  it('executes nested flows and keeps local vars scoped to the child flow', function(done) {
+    var ctx = runtime.createContext({
+      flows: {
+        entryFlow: {
+          steps: [
+            { type: 'setVar', name: 'prefix', value: 'root' },
+            { type: 'childFlow', suffix: 'tail' }
+          ]
+        },
+        childFlow: {
+          steps: [
+            { type: 'setVar', local: true, name: 'ephemeral', value: 'inner' },
+            { type: 'setVar', name: 'combined', value: '{{prefix}}-{{suffix}}-{{ephemeral}}' }
+          ]
+        }
+      }
+    });
+
+    ctx.createFlowEngine('entryFlow').execute(function(outputVars) {
+      assert.equal(outputVars.prefix, 'root');
+      assert.equal(outputVars.combined, 'root-tail-inner');
+      assert.equal(typeof outputVars.ephemeral, 'undefined');
+      assert.equal(typeof ctx.vars.ephemeral, 'undefined');
+      done();
+    });
+  });
+});
+
+describe('deployment-driven workflow engine', function () {
+  var server;
+  before(function () {
+    server = require('../server', { bustCache: true })();
+  });
+  after(function (done) {
+    server.close(done);
+  });
+
+  it('registers an http listener via /control/deploy and executes nested flows', function() {
+    var conf = {
+      action: 'deployAll',
+      apps: [
+        {
+          app: 'NestedFlowApp',
+          status: 'enabled',
+          flows: {
+            entryFlow: {
+              steps: [
+                { type: 'setVar', name: 'prefix', value: 'root' },
+                { type: 'childFlow', suffix: 'tail' }
+              ]
+            },
+            childFlow: {
+              steps: [
+                { type: 'setVar', local: true, name: 'ephemeral', value: 'inner' },
+                { type: 'setVar', name: 'combined', value: '{{prefix}}-{{suffix}}-{{ephemeral}}' },
+                { type: 'response', body: '{{combined}}' }
+              ]
+            }
+          },
+          listeners: [
+            { type: 'http', method: 'GET', endpoint: '/nested-flow', flow: 'entryFlow' }
+          ]
+        }
+      ]
+    };
+
+    return request(server)
+      .post('/control/deploy')
+      .send({ conf: conf })
+      .expect(200)
+      .then(function() {
+        return request(server)
+          .get('/nested-flow')
+          .expect(200)
+          .expect(function(res) {
+            assert.equal(res.text, 'root-tail-inner');
+          });
+      });
+  });
+});
+
 describe('loading twilio server', function () {
   var server;
   before(function () {

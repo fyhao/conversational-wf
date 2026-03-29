@@ -14,6 +14,10 @@ module.exports = {
 	}
 	,
 	process : function(ctx, step, checkNext) {
+		var processor = typeof ctx.getStepProcessor == 'function' ? ctx.getStepProcessor(step.type) : null;
+		if(processor) {
+			return processor(step, checkNext);
+		}
 		var text = step.text;
 		console.log('say text: ' + text);
 		fs.readFile('lib/module/twiliotemplate/saytemplate.xml', 'utf8', function(err, data) {
@@ -27,4 +31,3 @@ module.exports = {
 		};
 	}
 }
-
