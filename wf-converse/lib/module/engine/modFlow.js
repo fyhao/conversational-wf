@@ -2,7 +2,7 @@ var util = ProjRequire('lib/MyUtil');
 var modStep = require('./modStep.js');
 var evalParser = require('./helperEvalParser.js');
 var propParser = require('./helperPropParser.js');
-FLOW_ENGINE_CANCELED = false;
+var FLOW_ENGINE_CANCELED = false;
 var FlowEngine = function(flow) {
 	var _FLOW_ENGINE_CANCELED = false;
 	var vars = {};
@@ -76,6 +76,7 @@ var FlowEngine = function(flow) {
 		}
 	}
 	this.cancel = function() {
+		_FLOW_ENGINE_CANCELED = true;
 		this.canceled = true;
 	}
 	var replaceVars = function(c) {
