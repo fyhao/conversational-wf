@@ -23,6 +23,21 @@ describe('loading express', function () {
       .get('/foo/bar')
       .expect(404, done);
   });
+
+  it('exposes a controller health endpoint', function testHealth(done) {
+    request(server)
+      .get('/control/health')
+      .expect(200)
+      .expect({status:0, service:'wf-converse'}, done);
+  });
+
+  it('rejects deployment requests without configuration', function testInvalidDeploy(done) {
+    request(server)
+      .post('/control/deploy')
+      .send({})
+      .expect(400)
+      .expect({status:1, error:'conf is required'}, done);
+  });
   
 });
 

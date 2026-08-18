@@ -5,11 +5,22 @@ var dataStore = new DataStore();
 var mod = {
 	deploy : function(req, res) {
 		var conf;
+		if(!req.body || typeof req.body.conf == 'undefined') {
+			return res.status(400).json({status:1, error:'conf is required'});
+		}
 		if(typeof req.body.conf == 'string') {
-			conf = JSON.parse(req.body.conf);
+			try {
+				conf = JSON.parse(req.body.conf);
+			}
+			catch(e) {
+				return res.status(400).json({status:1, error:'conf must be valid JSON'});
+			}
 		}
 		else {
 			conf = req.body.conf;
+		}
+		if(!conf || typeof conf.action != 'string') {
+			return res.status(400).json({status:1, error:'conf.action is required'});
 		}
 		var action = conf.action;
 		if(action == 'deployAll') {
@@ -61,6 +72,10 @@ var mod = {
 		else {
 			res.json({status:0,action:action});
 		}
+	}
+	,
+	health : function(req, res) {
+		res.json({status:0, service:'wf-converse'});
 	}
 	,
 	registerRouting : function(app) {

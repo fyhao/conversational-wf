@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "nyc --reporter=html --reporter=text mocha test/alltests.js",
+	"test:unit": "mocha test/alltests.js",
     "coverage": "nyc report --reporter=text-lcov | coveralls",
     "performance": "node --allow-natives-syntax ./node_modules/mocha/bin/_mocha --reporter mocha-performance ./test/alltests.js",
     "start": "node app.js",
