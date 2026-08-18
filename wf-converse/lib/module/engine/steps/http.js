@@ -1,4 +1,3 @@
-var unirest = require('unirest');
 module.exports = {
 	process : function(ctx, step, checkNext) {
 		if(typeof step.method === 'undefined') step.method = 'GET';
@@ -39,66 +38,42 @@ module.exports = {
 
 
 var frequest = function(args) {
-	var method = args.method ? args.method : 'GET';
-	var req = null;
-	if(method === 'GET') {
-		req = unirest.get(args.url);
+	var method = (args.method || 'GET').toUpperCase();
+	var headers = args.headers || {};
+	if(typeof headers == 'string') {
+		try { headers = JSON.parse(headers); }
+		catch (e) { headers = {}; }
 	}
-	else if(method === 'POST') {
-		req = unirest.post(args.url);
-	}
-	if(args.headers) {
-		if(typeof args.headers == 'string') {
-			try {
-				args.headers = JSON.parse(args.headers);
-			} catch (e) {
-				
-			}
-		}
-		req.headers(args.headers);
-	}
+	var url = args.url;
+	var options = {method:method, headers:headers};
 	if(args.params) {
-		req.send(args.params);
+		if(method == 'GET') {
+			var query = typeof args.params == 'string' ? args.params : new URLSearchParams(args.params).toString();
+			url += (url.indexOf('?') == -1 ? '?' : '&') + query;
+		}
+		else {
+			options.body = typeof args.params == 'string' ? args.params : JSON.stringify(args.params);
+			if(!options.headers['content-type']) options.headers['content-type'] = 'application/json';
+		}
 	}
-	req.end(function(resp) {
-		if(args.callback) {
-			var body = resp.body;
-			/*
-			if(typeof resp.body !== 'string') {
-				body = JSON.stringify(resp.body);
+	fetch(url, options).then(function(response) {
+		return response.text().then(function(body) {
+			var resp = {status:response.status, ok:response.ok, headers:Object.fromEntries(response.headers), body:body};
+			if(args.callback) {
+				if(args.callback.length == 2) args.callback(body, resp);
+				else args.callback(body);
 			}
-			*/
-			if(args.callback.length == 2) {
-				args.callback(body, resp);
+			if(args.callbackJSON) {
+				try {
+					var json = JSON.parse(body);
+					if(args.callbackJSON.length == 2) args.callbackJSON(json, resp);
+					else args.callbackJSON(json);
+				} catch (e) {
+					if(args.errorCallback) args.errorCallback(e);
+				}
 			}
-			else {
-				args.callback(body);
-			}
-		}
-		if(args.callbackJSON) {
-			try {
-				var json;
-				if(typeof resp.body === 'string') {
-					json = JSON.parse(resp.body);
-				}
-				else {
-					json = resp.body;
-				}
-				/*
-				else {
-					json = resp.body;
-				}
-				*/
-				if(args.callback.length == 2) {
-					args.callbackJSON(json, resp);
-				}
-				else {
-					args.callbackJSON(json);
-				}
-			} catch (e) {
-				//console.log(e);
-				if(args.errorCallback) args.errorCallback(e);
-			}
-		}
-	})
+		});
+	}).catch(function(error) {
+		if(args.errorCallback) args.errorCallback(error);
+	});
 }

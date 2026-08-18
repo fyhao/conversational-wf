@@ -88,3 +88,32 @@ describe('twilio channel adapter', function() {
 		ctx.goNext();
 	});
 });
+
+describe('http workflow step', function() {
+	it('uses fetch and stores a JSON response', function(done) {
+		var httpStep = require('../lib/module/engine/steps/http');
+		var originalFetch = global.fetch;
+		global.fetch = function(url, options) {
+			assert.equal(url, 'https://example.test/status?app=demo');
+			assert.equal(options.method, 'GET');
+			return Promise.resolve({
+				status : 200,
+				ok : true,
+				headers : new Map([['content-type', 'application/json']]),
+				text : function() { return Promise.resolve('{"ready":true}'); }
+			});
+		};
+
+		var ctx = {vars:{}};
+		httpStep.process(ctx, {
+			method : 'GET',
+			url : 'https://example.test/status',
+			params : {app:'demo'},
+			varJson : 'status'
+		}, function() {
+			assert.deepEqual(ctx.vars.status, {ready:true});
+			global.fetch = originalFetch;
+			done();
+		});
+	});
+});

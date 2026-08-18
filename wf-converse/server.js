@@ -3,10 +3,9 @@ function createServer(opts) {
 	var port = 8081; // default port
 	if(typeof opts['port'] != 'undefined') port = opts['port'];
 	const express = require('express')
-	const bodyParser = require('body-parser');
 	const app = express()
-	app.use(bodyParser.urlencoded({ extended: true }))
-	app.use(bodyParser.json())
+	app.use(express.urlencoded({ extended: true }))
+	app.use(express.json())
 
 	var path = require('path');
 	global.ProjRequire = function(module) {
