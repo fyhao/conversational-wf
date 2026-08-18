@@ -26,6 +26,26 @@ describe('workflow runtime helper', function() {
 			done();
 		});
 	});
+
+	it('stops pending steps when an engine is cancelled directly', function(done) {
+		var runtime = require('../lib/module/engine/runtime');
+		var ctx = runtime.createContext();
+		var engine = ctx.createFlowEngine({
+			steps : [
+				{ type : 'wait', delay : 20 },
+				{ type : 'setVar', name : 'shouldNotRun', value : 'true' }
+			]
+		});
+
+		engine.execute(function() {});
+		engine.cancel();
+
+		setTimeout(function() {
+			assert.equal(engine.canceled, true);
+			assert.equal(typeof ctx.vars.shouldNotRun, 'undefined');
+			done();
+		}, 40);
+	});
 });
 
 describe('twilio channel adapter', function() {
