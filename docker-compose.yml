@@ -6,3 +6,23 @@ services:
       - "8081:8081"
     environment:
       PORT: "8081"
+  controller:
+    build:
+      context: ./controller
+    ports:
+      - "8082:8082"
+    environment:
+      PORT: "8082"
+      WORKFLOW_ENGINE_URL: "http://workflow-engine:8081"
+      CONTROLLER_USERNAME: "${CONTROLLER_USERNAME:-admin}"
+      CONTROLLER_PASSWORD: "${CONTROLLER_PASSWORD:?set CONTROLLER_PASSWORD in .env}"
+      CONTROLLER_TOKEN_SECRET: "${CONTROLLER_TOKEN_SECRET:?set CONTROLLER_TOKEN_SECRET in .env}"
+    depends_on:
+      - workflow-engine
+  admin-ui:
+    build:
+      context: ./admin-ui
+    ports:
+      - "8080:8080"
+    depends_on:
+      - controller

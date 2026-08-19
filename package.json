@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "scripts": {
+    "test": "npm --prefix wf-converse run test:unit && node --test controller/test/*.test.js admin-ui/test/*.test.js",
+    "test:engine": "npm --prefix wf-converse run test:unit",
+    "test:services": "node --test controller/test/*.test.js admin-ui/test/*.test.js",
+    "security": "npm --prefix wf-converse audit --omit=dev --audit-level=high"
+  },
+  "engines": { "node": ">=20" }
+}

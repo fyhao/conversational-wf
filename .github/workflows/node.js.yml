@@ -24,7 +24,7 @@ jobs:
         cache-dependency-path: wf-converse/package-lock.json
     - name: Install dependencies
       run: cd wf-converse && npm ci --ignore-scripts
-    - name: Run unit and integration tests
-      run: cd wf-converse && npm run test:unit
+    - name: Run workflow engine, controller, and admin UI tests
+      run: npm test
     - name: Fail on high production dependency vulnerabilities
-      run: cd wf-converse && npm audit --omit=dev --audit-level=high
+      run: npm run security
